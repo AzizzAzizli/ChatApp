@@ -6,21 +6,22 @@ const Input = ({
   type = "text",
   className = "",
   isRequired = true,
-    placeholder = "",
-    value = "",
-  onChange=()=>{},
+  placeholder = "",
+  value = "",
+  onChange = () => { },
+  containerClassName = "w-1/2",
 }) => {
   return (
-    <div className="w-1/2">
+    <div className={containerClassName}>
       <label
         htmlFor={name}
         className="mb-1  block text-sm  font-medium text-gray-800 "
       >
         {label}
       </label>
-          <input
-              value={value}
-              onChange={onChange}
+      <input
+        value={value}
+        onChange={onChange}
         id={name}
         type={type}
         placeholder={placeholder}
