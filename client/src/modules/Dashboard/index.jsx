@@ -51,9 +51,9 @@ const Dashboard = () => {
         <div className="ml-14 mt-10 h-3/4">
           <div className="text-primary text-lg">Messages</div>
           <div className=" overflow-y-auto h-full py-7 ">
-            {contacts.map(({ name, status, img }) => {
+            {contacts.map(({ name, status, img },index) => {
               return (
-                <div>
+                <div  key={name+index}>
                   <div className="flex items-center cursor-pointer  py-8 border-b border-b-gra-500 ">
                     <div className=" rounded-full border border-gray-500">
                       <img src={img} width={35} height={35} />
