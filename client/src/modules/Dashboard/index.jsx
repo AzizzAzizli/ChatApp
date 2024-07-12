@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import usersvg from "../../assets/images/user.svg";
 import sendsvg from "../../assets/icons/send.svg";
 
@@ -36,6 +36,33 @@ const Dashboard = () => {
       img: usersvg,
     },
   ];
+
+  const [user, setUser] = useState(
+    JSON.parse(localStorage.getItem("user:detail"))
+  );
+  const [conversations, setConversations] = useState([]);
+
+  async function fetchConversations() {
+    const loggedInUser = JSON.parse(localStorage.getItem("user:detail"));
+
+    const res = await fetch(
+      `http://localhost:3000/api/conversations/${loggedInUser?.id}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    const resData = await res.json();
+    console.log(resData, "conversations");
+    setConversations(resData);
+  }
+  useEffect(() => {
+    fetchConversations();
+  }, []);
+
+  // console.log(user);
   return (
     <div className="w-full h-screen flex ">
       <div className="w-1/4  bg-secondary">
@@ -44,24 +71,26 @@ const Dashboard = () => {
             <img src={usersvg} width={50} height={50} />
           </div>
           <div className="ml-4">
-            <h3 className="text-2xl">Aziz</h3>
+            <h3 className="text-2xl">{user.fullname}</h3>
             <p className="text-lg font-extralight">My Account</p>
           </div>
         </div>
         <div className="ml-14 mt-10 h-3/4">
           <div className="text-primary text-lg">Messages</div>
           <div className=" overflow-y-auto h-full py-7 ">
-            {contacts.map(({ name, status, img },index) => {
+            {conversations.map(({ conversationId, user }, index) => {
               return (
-                <div  key={name+index}>
+                <div key={user?.email}>
                   <div className="flex items-center cursor-pointer  py-8 border-b border-b-gra-500 ">
                     <div className=" rounded-full border border-gray-500">
-                      <img src={img} width={35} height={35} />
+                      <img src={usersvg} width={35} height={35} />
                     </div>
                     <div className="ml-2">
-                      <h3 className="text-lg font-semibold">{name}</h3>
+                      <h3 className="text-lg font-semibold">
+                        {user?.fullname}
+                      </h3>
                       <p className="text-sm font-extralight text-gray-600">
-                        {status}
+                        {user.email}
                       </p>
                     </div>
                   </div>
@@ -108,8 +137,20 @@ const Dashboard = () => {
           </div>
         </div>
         <div className="flex w-full items-center ml-4">
-                  <Input containerClassName="w-3/4"  className="" placeholder="Type a message ..." />
-                  <div className="ml-4 "><img src={sendsvg} height={30} width={30} className="cursor-pointer" alt="sendbutton" /></div>
+          <Input
+            containerClassName="w-3/4"
+            className=""
+            placeholder="Type a message ..."
+          />
+          <div className="ml-4 ">
+            <img
+              src={sendsvg}
+              height={30}
+              width={30}
+              className="cursor-pointer"
+              alt="sendbutton"
+            />
+          </div>
         </div>
       </div>
 

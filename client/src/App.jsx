@@ -1,11 +1,12 @@
 import Dashboard from "./modules/Dashboard";
 import Form from "./modules/Form";
 import { Routes, Route, Navigate } from "react-router-dom";
-
+import "react-toastify/dist/ReactToastify.css";
+import { ToastContainer } from "react-toastify";
 function App() {
-  const ProtectedRoutes = ({ children }) => {
-    const isLoggedIn = localStorage.getItem("user:token") !== null||true;
-    if (!isLoggedIn) {
+  const ProtectedRoutes = ({ children, auth }) => {
+    const isLoggedIn = localStorage.getItem("user:token") !== null || false;
+    if (!isLoggedIn && auth) {
       return <Navigate to={"/users/sign_in"} />;
     } else if (
       isLoggedIn &&
@@ -16,32 +17,36 @@ function App() {
     return children;
   };
   return (
-    <Routes>
-      <Route
-        path="/"
-        element={
-          <ProtectedRoutes>
-            <Dashboard />
-          </ProtectedRoutes>
-        }
-      />
-      <Route
-        path="/users/sign_in"
-        element={
-          <ProtectedRoutes>
-            <Form isSignInPage={true} />
-          </ProtectedRoutes>
-        }
-      />
-      <Route
-        path="/users/sign_up"
-        element={
-          <ProtectedRoutes>
-            <Form isSignInPage={false} />
-          </ProtectedRoutes>
-        }
-      />
-    </Routes>
+    <>
+      <ToastContainer />
+
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <ProtectedRoutes auth={true}>
+              <Dashboard />
+            </ProtectedRoutes>
+          }
+        />
+        <Route
+          path="/users/sign_in"
+          element={
+            <ProtectedRoutes>
+              <Form isSignInPage={true} />
+            </ProtectedRoutes>
+          }
+        />
+        <Route
+          path="/users/sign_up"
+          element={
+            <ProtectedRoutes>
+              <Form isSignInPage={false} />
+            </ProtectedRoutes>
+          }
+        />
+      </Routes>
+    </>
   );
 }
 
