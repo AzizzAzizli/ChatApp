@@ -137,7 +137,7 @@ app.get("/api/conversations/:userId", async (req, res, next) => {
         );
         const user = await Users.findById(recieverId);
         return {
-          user: { email: user.email, fullname: user.fullname },
+          user: {receiverId:user._id,  email: user.email, fullname: user.fullname },
           conversationId: conversation._id,
         };
       })
@@ -187,7 +187,7 @@ app.get("/api/message/:conversationId", async (req, res) => {
       messages.map(async (message) => {
         const user = await Users.findById(message.senderId);
         return {
-          user: { email: user.email, fullname: user.fullname },
+          user: { id:user._id, email: user.email, fullname: user.fullname },
           message: message.message,
         };
       })
