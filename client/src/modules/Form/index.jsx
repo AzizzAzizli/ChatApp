@@ -28,15 +28,15 @@ const Form = ({ isSignInPage = false }) => {
     //  console.log(resData);
     if (resData.status === 400) {
       toast.warning(resData.message);
-    } else {
-      if (resData.token) {
-        toast.success(resData.message);
-        localStorage.setItem("user:token", JSON.stringify(resData.token));
-        localStorage.setItem("user:detail", JSON.stringify(resData.user));
-        setTimeout(() => {
-          navigate("/");
-        }, 750);
-      }
+    } else if (resData.status === 201) {
+      toast.success(resData.message);
+    } else if (resData.token) {
+      toast.success(resData.message);
+      localStorage.setItem("user:token", JSON.stringify(resData.token));
+      localStorage.setItem("user:detail", JSON.stringify(resData.user));
+      setTimeout(() => {
+        navigate("/");
+      }, 750);
     }
   }
   return (

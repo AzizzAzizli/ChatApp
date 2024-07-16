@@ -6,13 +6,11 @@ const conversationSchema = new mongoose.Schema(
       type: Array,
       required: true,
     },
-  
-      
   },
   {
     timestamps: true,
   }
 );
 
-const Conversation = mongoose.model("Conversation", conversationSchema);
-module.exports = Conversation;
+const Conversations = mongoose.model("Conversation", conversationSchema);
+module.exports = Conversations;

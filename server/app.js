@@ -4,9 +4,8 @@ const jsonwebtoken = require("jsonwebtoken");
 require("./db/connection");
 const cors = require("cors");
 const Users = require("./models/Users");
-const Conversations = require("./models/Conversation");
+const Conversations = require("./models/Conversations");
 const Messages = require("./models/Messages");
-const Conversation = require("./models/Conversation");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -14,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.get("/", (req, res) => {});
+// app.get("/", (req, res) => {});
 
 app.post("/api/register", async (req, res, next) => {
   try {
@@ -23,12 +22,12 @@ app.post("/api/register", async (req, res, next) => {
     if (!email || !password || !fullname) {
       res
         .status(400)
-        .send({ message: "Please fill the all required fields", status: 400 });
+        .json({ message: "Please fill the all required fields", status: 400 });
     } else {
       const isAlreadyExist = await Users.findOne({ email });
 
       if (isAlreadyExist) {
-        res.status(400).send({ message: "User already exists", status: 400 });
+        res.status(400).json({ message: "User already exists", status: 400 });
       } else {
         const newUser = new Users({ fullname, email });
 
@@ -39,7 +38,7 @@ app.post("/api/register", async (req, res, next) => {
         });
         return res
           .status(200)
-          .send({ message: "User registered successfully", status: 200 });
+          .json({ message: "User registered successfully", status: 201 });
       }
     }
   } catch (error) {
@@ -53,22 +52,20 @@ app.post("/api/login", async (req, res, next) => {
     if (!email || !password) {
       res
         .status(400)
-        .send({ message: "Please fill the all required fields", status: 400 });
+        .json({ message: "Please fill the all required fields", status: 400 });
     } else {
       const user = await Users.findOne({ email });
       if (!user) {
-        res
-          .status(400)
-          .send({
-            message: "User email or password is incorrect",
-            status: 400,
-          });
+        res.status(400).json({
+          message: "User email or password is incorrect",
+          status: 400,
+        });
       } else {
         const validateUser = await bcryptjs.compare(password, user.password);
         if (!validateUser) {
           res
             .status(400)
-            .send({ message: "User  password is incorrect", status: 400 });
+            .json({ message: "User  password is incorrect", status: 400 });
         } else {
           const payload = {
             userId: user._id,
@@ -89,7 +86,7 @@ app.post("/api/login", async (req, res, next) => {
               );
 
               user.save();
-              return res.status(200).send({
+              return res.status(200).json({
                 message: "Logged in successfully",
                 status: 200,
                 user: {
@@ -118,7 +115,9 @@ app.post("/api/conversation", async (req, res, next) => {
     });
 
     await newConversation.save();
-    res.status(200).send("Conversation created successfully");
+    res
+      .status(201)
+      .json({ message: "Conversation created successfully", status: 201 });
   } catch (error) {
     console.log(error);
   }
@@ -130,19 +129,23 @@ app.get("/api/conversations/:userId", async (req, res, next) => {
     const conversations = await Conversations.find({
       members: { $in: [userId] },
     });
-    const conversationUserData = Promise.all(
+    const conversationUserData = await Promise.all(
       conversations.map(async (conversation) => {
         const recieverId = conversation.members.find(
           (member) => member !== userId
         );
         const user = await Users.findById(recieverId);
         return {
-          user: {receiverId:user._id,  email: user.email, fullname: user.fullname },
+          user: {
+            receiverId: user._id,
+            email: user.email,
+            fullname: user.fullname,
+          },
           conversationId: conversation._id,
         };
       })
     );
-    res.status(200).send(await conversationUserData);
+    res.status(200).json(conversationUserData);
   } catch (error) {
     console.log(error);
   }
@@ -150,13 +153,16 @@ app.get("/api/conversations/:userId", async (req, res, next) => {
 app.post("/api/message", async (req, res) => {
   try {
     const { conversationId, senderId, message, receiverId = "" } = req.body;
-    if (!senderId || !message)
-      return res.status(400).send("Please fill the all required fields");
-
-    if (!conversationId && receiverId) {
-      const newConversation = new Conversation({
+    if (!senderId || !message) {
+      return res
+        .status(400)
+        .json({ message: "Please fill the all required fields", status: 400 });
+    }
+    if (conversationId === "new" && receiverId) {
+      const newConversation = new Conversations({
         members: [senderId, receiverId],
       });
+      console.log(newConversation);
       await newConversation.save();
       const newMessage = new Messages({
         conversationId: newConversation._id,
@@ -164,15 +170,19 @@ app.post("/api/message", async (req, res) => {
         message,
       });
       await newMessage.save();
-      res.status(200).send("Message sent successfully");
-    } else {
-      return res.status(400).send("Please fill the all required fields");
+      return res
+        .status(201)
+        .json({ message: "Message sent successfully", status: 201 });
+    } else if (!conversationId && !receiverId) {
+      return res
+        .status(400)
+        .json({ message: "Please fill the all required fields", status: 400 });
     }
     const newMessage = new Messages({ conversationId, senderId, message });
 
     await newMessage.save();
 
-    res.status(200).send("Message sent successfully");
+    res.status(201).json({ message: "Message sent successfully", status: 201 });
   } catch (error) {
     console.log(error);
   }
@@ -180,35 +190,55 @@ app.post("/api/message", async (req, res) => {
 
 app.get("/api/message/:conversationId", async (req, res) => {
   try {
+    async function checkMessages(conversationId) {
+      const messages = await Messages.find({ conversationId });
+      const messageUserData = await Promise.all(
+        messages.map(async (message) => {
+          const user = await Users.findById(message.senderId);
+          return {
+            user: { id: user._id, email: user.email, fullname: user.fullname },
+            message: message.message,
+          };
+        })
+      );
+      return res.status(200).json(messageUserData);
+    }
+
     const conversationId = req.params.conversationId;
-    if (conversationId === "new") return res.status(200).json([]);
-    const messages = await Messages.find({ conversationId });
-    const messageUserData = Promise.all(
-      messages.map(async (message) => {
-        const user = await Users.findById(message.senderId);
-        return {
-          user: { id:user._id, email: user.email, fullname: user.fullname },
-          message: message.message,
-        };
-      })
-    );
-    res.status(200).json(await messageUserData);
+
+    if (conversationId === "new") {
+      const checkConversation = await Conversations.find({
+        members: { $all: [req.query.senderId, req.query.receiverId] },
+      });
+      if (checkConversation.length > 0) {
+        checkMessages(checkConversation[0]._id);
+      } else {
+        return res.status(200).json([]);
+      }
+    } else {
+      checkMessages(conversationId);
+    }
   } catch (error) {
     console.log(error);
   }
 });
-app.get("/api/users", async (req, res) => {
+app.get("/api/users/:userId", async (req, res) => {
   try {
-    const users = await Users.find();
-    const usersData = Promise.all(
+    const userId = req.params.userId;
+    const users = await Users.find({ _id: { $ne: userId } });
+    const usersData = await Promise.all(
       users.map(async (user) => {
         return {
-          user: { email: user.email, fullname: user.fullname },
+          user: {
+            email: user.email,
+            fullname: user.fullname,
+            receiverId: user._id,
+          },
           userId: user._id,
         };
       })
     );
-    res.status(200).json(await usersData);
+    res.status(200).json(usersData);
   } catch (error) {
     log.error(error);
   }
