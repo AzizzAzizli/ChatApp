@@ -3,7 +3,7 @@ const bcryptjs = require("bcryptjs");
 const jsonwebtoken = require("jsonwebtoken");
 require("./db/connection");
 const cors = require("cors");
-const io = require("socket.io")(4000, {
+const io = require("socket.io")(4040, {
   cors: {
     origin: "http://localhost:5173",
     methods: ["GET", "POST"],
@@ -22,22 +22,28 @@ app.use(express.urlencoded({ extended: false }));
 let users = [];
 io.on("connection", (socket) => {
   socket.on("addUser", (userId) => {
+    console.log("userId=> ",userId);
+
     const isUserExist = users.find((user) => user.userId === userId);
     if (!isUserExist) {
       const user = { userId, socketId: socket.id };
       users.push(user);
+      console.log("user=> ", user);
       io.emit("getUsers", users);
     }
-  });
+  }); 
 
   socket.on(
     "sendMessage",
     async ({ conversationId, senderId, message, receiverId }) => {
-      // console.log("messages => ", message);
+      console.log(users);
+      console.log("messages => ", message);
+      console.log("receiverId => ", receiverId);
+      console.log("senderId => ", senderId);
       const receiver = users?.find((user) => user.userId === receiverId);
       const sender = users?.find((user) => user.userId === senderId);
-      // console.log(users, " users");
-      // console.log("receiver=> " + receiver, " sender=> " + sender);
+      console.log(users, " users");
+      console.log("receiver=> " + receiver, " sender=> " + sender);
       const user = await Users.findById(senderId);
       if (receiver) {
         io.to(receiver?.socketId)

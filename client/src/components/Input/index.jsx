@@ -1,6 +1,7 @@
 import React from "react";
 
 const Input = ({
+  autocomplete="",
   label = "",
   name = "",
   type = "text",
@@ -20,6 +21,7 @@ const Input = ({
         {label}
       </label>
       <input
+        autoComplete={autocomplete}
         value={value}
         onChange={onChange}
         id={name}

@@ -3,6 +3,7 @@ import Input from "../../components/Input";
 import Button from "../../components/Button";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { validateEmail } from "../../../utils";
 
 const Form = ({ isSignInPage = false }) => {
   const [data, setData] = useState({
@@ -13,6 +14,20 @@ const Form = ({ isSignInPage = false }) => {
   const navigate = useNavigate();
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (data?.email.trim() !== "aziz" && data?.email.trim() !== "admin") {
+    const isValidEmail = validateEmail(data.email)
+
+      console.log(data.email);
+      if (!isValidEmail) {
+        toast.warning("Please enter a valid email")
+    return
+      }
+      return
+    }
+
+ 
+
     const res = await fetch(
       `http://localhost:3000/api/${isSignInPage ? "login" : "register"}`,
       {
@@ -64,6 +79,8 @@ const Form = ({ isSignInPage = false }) => {
             />
           )}
           <Input
+             autocomplete="current-password"
+            // type="email"
             label="Email address"
             name="email"
             placeholder="Enter your email"
@@ -72,6 +89,7 @@ const Form = ({ isSignInPage = false }) => {
             onChange={(e) => setData({ ...data, email: e.target.value })}
           />
           <Input
+            type="password"
             label="Password"
             name="password"
             placeholder="Enter your password"

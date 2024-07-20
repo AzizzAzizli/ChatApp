@@ -23,7 +23,7 @@ const bottomRef = useRef(null)
   }, [messages]);
 
   useEffect(() => {
-    const newSocket = io("http://localhost:4000")
+    const newSocket = io("http://localhost:4040")
     setSocket(newSocket);
     return () => {
       newSocket.disconnect();
@@ -33,13 +33,14 @@ const bottomRef = useRef(null)
   useEffect(() => {
     // console.log(socket);
     if (socket) {
+      // console.log(user?.id);
       socket.emit("addUser", user?.id);
       socket.on("getUsers", (activeusers) => {
         // console.log("actives", activeusers);
       });
 
       socket.on("getMessage", (data) => {
-        // console.log(data);
+        console.log(data);
         setMessages((prev) => ({
           ...prev,
           messages: [...prev.messages, { user: data.user, message: data.message }],
