@@ -3,6 +3,12 @@ const bcryptjs = require("bcryptjs");
 const jsonwebtoken = require("jsonwebtoken");
 require("./db/connection");
 const cors = require("cors");
+const io = require("socket.io")(4000, {
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"],
+  },
+});
 const Users = require("./models/Users");
 const Conversations = require("./models/Conversations");
 const Messages = require("./models/Messages");
@@ -13,7 +19,53 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// app.get("/", (req, res) => {});
+let users = [];
+io.on("connection", (socket) => {
+  socket.on("addUser", (userId) => {
+    const isUserExist = users.find((user) => user.userId === userId);
+    if (!isUserExist) {
+      const user = { userId, socketId: socket.id };
+      users.push(user);
+      io.emit("getUsers", users);
+    }
+  });
+
+  socket.on(
+    "sendMessage",
+    async ({ conversationId, senderId, message, receiverId }) => {
+      // console.log("messages => ", message);
+      const receiver = users?.find((user) => user.userId === receiverId);
+      const sender = users?.find((user) => user.userId === senderId);
+      // console.log(users, " users");
+      // console.log("receiver=> " + receiver, " sender=> " + sender);
+      const user = await Users.findById(senderId);
+      if (receiver) {
+        io.to(receiver?.socketId)
+          .to(sender?.socketId)
+          .emit("getMessage", {
+            senderId,
+            message,
+            conversationId,
+            receiverId,
+            user: { id: user._id, fullname: user.fullname, email: user.email },
+          });
+      } else {
+        io.to(sender?.socketId).emit("getMessage", {
+          senderId,
+          message,
+          conversationId,
+          receiverId,
+          user: { id: user._id, fullname: user.fullname, email: user.email },
+        });
+      }
+    }
+  );
+
+  socket.on("disconnect", () => {
+    users = users.filter((user) => user.userId !== socket.id);
+    io.emit("getUsers", users);
+  });
+});
 
 app.post("/api/register", async (req, res, next) => {
   try {
@@ -131,10 +183,10 @@ app.get("/api/conversations/:userId", async (req, res, next) => {
     });
     const conversationUserData = await Promise.all(
       conversations.map(async (conversation) => {
-        const recieverId = conversation.members.find(
+        const receiverId = conversation.members.find(
           (member) => member !== userId
         );
-        const user = await Users.findById(recieverId);
+        const user = await Users.findById(receiverId);
         return {
           user: {
             receiverId: user._id,
@@ -153,6 +205,7 @@ app.get("/api/conversations/:userId", async (req, res, next) => {
 app.post("/api/message", async (req, res) => {
   try {
     const { conversationId, senderId, message, receiverId = "" } = req.body;
+    // console.log(conversationId, senderId, message, receiverId );
     if (!senderId || !message) {
       return res
         .status(400)
@@ -162,7 +215,7 @@ app.post("/api/message", async (req, res) => {
       const newConversation = new Conversations({
         members: [senderId, receiverId],
       });
-      console.log(newConversation);
+      // console.log(newConversation);
       await newConversation.save();
       const newMessage = new Messages({
         conversationId: newConversation._id,
@@ -234,13 +287,12 @@ app.get("/api/users/:userId", async (req, res) => {
             fullname: user.fullname,
             receiverId: user._id,
           },
-          userId: user._id,
         };
       })
     );
     res.status(200).json(usersData);
   } catch (error) {
-    log.error(error);
+    console.log(error);
   }
 });
 

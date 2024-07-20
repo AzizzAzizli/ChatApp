@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import usersvg from "../../assets/images/user.svg";
 import sendsvg from "../../assets/icons/send.svg";
 import logoutsvg from "../../assets/icons/logout.svg";
 import Input from "../../components/Input";
 import { toast } from "react-toastify";
+import { io } from "socket.io-client";
+
 const Dashboard = () => {
   const [user, setUser] = useState(
     JSON.parse(localStorage.getItem("user:detail"))
@@ -12,6 +14,40 @@ const Dashboard = () => {
   const [messages, setMessages] = useState({});
   const [message, setMessage] = useState("");
   const [users, setUsers] = useState([]);
+  const [socket, setSocket] = useState(null);
+
+const bottomRef = useRef(null)
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  useEffect(() => {
+    const newSocket = io("http://localhost:4000")
+    setSocket(newSocket);
+    return () => {
+      newSocket.disconnect();
+    };
+  }, []);
+  // console.log(messages);
+  useEffect(() => {
+    // console.log(socket);
+    if (socket) {
+      socket.emit("addUser", user?.id);
+      socket.on("getUsers", (activeusers) => {
+        // console.log("actives", activeusers);
+      });
+
+      socket.on("getMessage", (data) => {
+        // console.log(data);
+        setMessages((prev) => ({
+          ...prev,
+          messages: [...prev.messages, { user: data.user, message: data.message }],
+        }));
+      });
+    }
+  }, [socket]);
+  // console.log(messages, "messages");
 
   function logOut() {
     localStorage.removeItem("user:detail");
@@ -38,7 +74,7 @@ const Dashboard = () => {
     // console.log(resData, "conversations");
     setConversations(resData);
   }
-
+  // console.log(conversations,"conversations");
   async function fetchMessages(conversationId, receiver) {
     const res = await fetch(
       `http://localhost:3000/api/message/${conversationId}?senderId=${user?.id}&&receiverId=${receiver?.receiverId}`,
@@ -50,10 +86,19 @@ const Dashboard = () => {
       }
     );
     const resData = await res.json();
-    setMessages({ messages: resData, receiver: receiver, conversationId });
+    // console.log(resData,"messageRes");
+    setMessages({ messages: resData, receiver, conversationId });
   }
+  // console.log(messages,"messages");
 
   async function sendMessage() {
+    socket.emit("sendMessage", {
+      conversationId: messages?.conversationId,
+      senderId: user?.id,
+      message,
+      receiverId: messages?.receiver?.receiverId,
+    });
+
     // console.log(message);
     const res = await fetch(`http://localhost:3000/api/message`, {
       method: "POST",
@@ -68,7 +113,7 @@ const Dashboard = () => {
       }),
     });
     const resData = await res.json();
-    console.log(resData);
+    // console.log(resData);
     setMessage("");
   }
 
@@ -86,16 +131,16 @@ const Dashboard = () => {
     const resData = await res.json();
     setUsers(resData);
   }
+  // console.log(users,"users")
 
   useEffect(() => {
     fetchUsers();
-    // console.log(users)
   }, []);
 
   // console.log(user);
   return (
     <div className="w-full h-screen flex ">
-      <div className="w-1/4  bg-secondary">
+      <div className="w-1/4  h-full bg-secondary  ">
         <div className="flex items-center justify-center my-6 border-b   border-gray-300 pb-3">
           <div className="border-2 border-primary rounded-full">
             <img src={usersvg} width={50} height={50} />
@@ -108,13 +153,14 @@ const Dashboard = () => {
             <img width={35} height={35} src={logoutsvg} alt="logoutsvg" />
           </div>
         </div>
-        <div className="ml-14 mt-10 h-3/4">
+        <div className="ml-14 mt-10 h-2/4">
           <div className="text-primary text-lg">Messages</div>
           <div className=" overflow-y-auto h-full py-7 ">
             {conversations.length > 0 ? (
               conversations.map(({ conversationId, user }, index) => {
+                // console.log(user);
                 return (
-                  <div key={user?.email}>
+                  <div key={conversationId + index}>
                     <div
                       className="flex items-center cursor-pointer  py-8 border-b border-b-gray-500 "
                       onClick={() => fetchMessages(conversationId, user)}
@@ -142,7 +188,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-      <div className="w-1/2 bg-white ">
+      <div className="w-1/2 h-screen bg-white ">
         <div className="flex w-full justify-center">
           {messages?.receiver?.fullname && (
             <div className="w-3/4 bg-secondary h-[80px] mt-10  flex items-center rounded-full px-14 ">
@@ -162,7 +208,7 @@ const Dashboard = () => {
           <div className="h-full py-4 px-3">
             {messages?.messages?.length > 0 ? (
               messages?.messages?.map(
-                ({ message, user: { id, fullname } }, index) => {
+                ({ message, user: { id, fullname } = {} }, index) => {
                   if (id === user.id) {
                     return (
                       <div
@@ -175,17 +221,22 @@ const Dashboard = () => {
                             <p>{id === user.id ? "You" : fullname}</p>
                           </div>
                         </div>
+                        <div ref={bottomRef}></div>
                       </div>
                     );
                   } else {
                     return (
-                      <div className="flex justify-start mb-4">
+                      <div
+                        key={index + 1 + ") " + message}
+                        className="flex justify-start mb-4"
+                      >
                         <div className=" bg-gray-300 text-gray-700 rounded-tl-none  rounded-lg p-3 max-w-xs overflow-x-auto break-words">
                           <p className="whitespace-pre-wrap">{message}</p>
                           <div className="text-right text-xs mt-2">
                             <p>{fullname}</p>
                           </div>
                         </div>
+                        <div ref={bottomRef}></div>
                       </div>
                     );
                   }
@@ -241,12 +292,12 @@ const Dashboard = () => {
       </div>
 
       <div className="w-1/4 h-screen bg-light ">
-        <div className="text-primary text-lg px-8 pl-7">People</div>
-        <div className=" overflow-y-auto h-full py-2 pl-7 ">
+        <div className="text-primary text-lg  pl-8 pt-5">New people</div>
+        <div className=" overflow-y-auto h-3/4 py-2 pl-7 ">
           {users.length > 0 ? (
-            users.map(({ userId, user }, index) => {
+            users.map(({ user }) => {
               return (
-                <div key={user?.email}>
+                <div key={user?.receiverId}>
                   <div
                     className="flex items-center cursor-pointer  py-8 border-b border-b-gray-500 "
                     onClick={() => fetchMessages("new", user)}
@@ -259,7 +310,7 @@ const Dashboard = () => {
                         {user?.fullname}
                       </h3>
                       <p className="text-sm font-extralight text-gray-600">
-                        {user.email}
+                        {user?.email}
                       </p>
                     </div>
                   </div>
