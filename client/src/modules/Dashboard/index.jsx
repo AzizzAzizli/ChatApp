@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import usersvg from "../../assets/images/user.svg";
 import sendsvg from "../../assets/icons/send.svg";
 import logoutsvg from "../../assets/icons/logout.svg";
+import plussvg from "../../assets/icons/plus.svg"
+import cancelsvg from "../../assets/icons/cancel.svg"
 import Input from "../../components/Input";
 import { toast } from "react-toastify";
 import { io } from "socket.io-client";
@@ -15,6 +17,7 @@ const Dashboard = () => {
   const [message, setMessage] = useState("");
   const [users, setUsers] = useState([]);
   const [socket, setSocket] = useState(null);
+const [isLeftBarOpen,setIsLeftBarOpen] = useState(false)
 
 const bottomRef = useRef(null)
 
@@ -141,39 +144,42 @@ const bottomRef = useRef(null)
   // console.log(user);
   return (
     <div className="w-full h-screen flex ">
-      <div className="w-1/4  h-full bg-secondary  ">
-        <div className="flex items-center justify-center my-6 border-b   border-gray-300 pb-3">
+      <div className="w-1/3  md:w-1/4  h-full  bg-secondary  ">
+        <div className="flex items-center justify-center my-4 border-b   border-gray-300 pb-3">
           <div className="border-2 border-primary rounded-full">
-            <img src={usersvg} width={50} height={50} />
+            <img className="w-[35px] md:w-[50px]"  src={usersvg} width={50} height={50} />
           </div>
           <div className="ml-4">
-            <h3 className="text-2xl">{user.fullname}</h3>
-            <p className="text-lg font-extralight">My Account</p>
+            <h3 className="text-lg sm:text-2xl">{user.fullname}</h3>
+            <p className="text-xs sm:text-lg font-extralight">My Account</p>
           </div>
           <div onClick={logOut} className=" ml-5 cursor-pointer">
-            <img width={35} height={35} src={logoutsvg} alt="logoutsvg" />
+            <img className="w-[25px] sm:w-[35px]" width={35} height={35} src={logoutsvg} alt="logoutsvg" />
           </div>
         </div>
-        <div className="ml-14 mt-10 h-2/4">
-          <div className="text-primary text-lg">Messages</div>
-          <div className=" overflow-y-auto h-full py-7 ">
+        <div className="ml-2 mt-5 md:mt-10 ">
+          <div className="flex items-center justify-between">
+          <div className="text-primary text-sm sm:text-lg  ">Messages</div>
+            <div><img onClick={()=>setIsLeftBarOpen(prev=>!prev)} width={20} height={20} src={plussvg} alt="plus" /></div> </div>
+          
+          <div className=" overflow-y-auto  py-3 md:py-7 ">
             {conversations.length > 0 ? (
               conversations.map(({ conversationId, user }, index) => {
                 // console.log(user);
                 return (
                   <div key={conversationId + index}>
                     <div
-                      className="flex items-center cursor-pointer  py-8 border-b border-b-gray-500 "
+                      className="flex items-center cursor-pointer   py-4 md:py-8 border-b border-b-gray-500 "
                       onClick={() => fetchMessages(conversationId, user)}
                     >
                       <div className=" rounded-full border border-gray-500">
                         <img src={usersvg} width={35} height={35} />
                       </div>
                       <div className="ml-2">
-                        <h3 className="text-lg font-semibold">
+                        <h3 className="text-sm sm:text-lg font-semibold">
                           {user?.fullname}
                         </h3>
-                        <p className="text-sm font-extralight text-gray-600">
+                        <p className="text-xs sm:text-sm font-extralight text-gray-600">
                           {user.email}
                         </p>
                       </div>
@@ -182,23 +188,23 @@ const bottomRef = useRef(null)
                 );
               })
             ) : (
-              <div className="text-center text-lg  font-semibold mt-24">
+              <div className="text-center text-sm md:text-lg  font-semibold mt-24">
                 No Conversations
               </div>
             )}
           </div>
         </div>
       </div>
-      <div className="w-1/2 h-screen bg-white ">
+      <div className="w-2/3 md:w-1/2 h-full bg-white  ">
         <div className="flex w-full justify-center">
           {messages?.receiver?.fullname && (
-            <div className="w-3/4 bg-secondary h-[80px] mt-10  flex items-center rounded-full px-14 ">
+            <div className="w-3/4 bg-secondary h-[50px] md:h-[80px] mt-3 md:mt-10  flex items-center rounded-full px-7 md:px-14 ">
               <div className=" rounded-full border border-blue-500">
                 <img src={usersvg} width={35} height={35} />
               </div>
               <div className="ml-4">
-                <h3 className="text-lg ">{messages?.receiver?.fullname}</h3>
-                <p className="text-sm font-light text-gray-600">
+                <h3 className="text-sm sm:text-lg ">{messages?.receiver?.fullname}</h3>
+                <p className="text-xs sm:text-sm font-light text-gray-600">
                   {messages?.receiver?.email}
                 </p>
               </div>
@@ -206,7 +212,7 @@ const bottomRef = useRef(null)
           )}
         </div>
         <div className="h-3/4 w-full  overflow-y-auto">
-          <div className="h-full py-4 px-3">
+          <div className="h-full py-4 px-1 sm:px-3">
             {messages?.messages?.length > 0 ? (
               messages?.messages?.map(
                 ({ message, user: { id, fullname } = {} }, index) => {
@@ -217,7 +223,7 @@ const bottomRef = useRef(null)
                         className="flex justify-end mb-4"
                       >
                         <div className=" bg-primary text-white rounded-tr-none  rounded-lg p-3 max-w-xs overflow-x-auto break-words">
-                          <p className="whitespace-pre-wrap">{message}</p>
+                          <p className="whitespace-pre-wrap text-sm sm:text-lg">{message}</p>
                           <div className="text-right text-xs mt-2">
                             <p>{id === user.id ? "You" : fullname}</p>
                           </div>
@@ -244,31 +250,11 @@ const bottomRef = useRef(null)
                 }
               )
             ) : (
-              <div className="text-center text-lg font-semibold mt-24 ">
+              <div className="text-center text-sm md:text-lg font-semibold mt-24 ">
                 {" "}
                 No Messages
               </div>
             )}
-            {/* Left */}
-            {/* <div className="flex justify-start mb-4">
-              <div className=" bg-gray-300 text-gray-700 rounded-tl-none  rounded-lg p-3 max-w-xs overflow-x-auto break-words">
-                <p className="whitespace-pre-wrap">
-                  Salammmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
-                </p>
-                <div className="text-right text-xs mt-2">
-                  <p>12/05/2024</p>
-                </div>
-              </div>
-            </div> */}
-            {/* Right */}
-            {/* <div className="flex justify-end mb-4">
-              <div className=" bg-primary text-white rounded-tr-none  rounded-lg p-3 max-w-xs overflow-x-auto break-words">
-                <p className="whitespace-pre-wrap">Salammmmmmmmmmmmmmmmm</p>
-                <div className="text-right text-xs mt-2">
-                  <p>12/05/2024</p>
-                </div>
-              </div>
-            </div> */}
           </div>
         </div>
         {messages?.receiver?.fullname && (
@@ -286,31 +272,67 @@ const bottomRef = useRef(null)
                 !message && "pointer-events-none"
               }`}
             >
-              <img src={sendsvg} height={30} width={30} alt="sendbutton" />
+              <img className=" w-[22px] sm:w-[30px]" src={sendsvg} height={30} width={30} alt="sendbutton" />
             </div>
           </div>
         )}
       </div>
 
-      <div className="w-1/4 h-screen bg-light ">
-        <div className="text-primary text-lg  pl-8 pt-5">New people</div>
-        <div className=" overflow-y-auto h-3/4 py-2 pl-7 ">
+      <div className="w-1/3  md:w-1/4 h-full bg-light hidden md:block ">
+        <div className="text-primary text-sm md:text-lg  pl-2 pt-5">New people</div>
+        <div className=" overflow-y-auto  py-2 pl-2 ">
           {users.length > 0 ? (
             users.map(({ user }) => {
               return (
                 <div key={user?.receiverId}>
                   <div
-                    className="flex items-center cursor-pointer  py-8 border-b border-b-gray-500 "
+                    className="flex items-center cursor-pointer  py-4 md:py-8 border-b border-b-gray-500 "
                     onClick={() => fetchMessages("new", user)}
                   >
                     <div className=" rounded-full border border-gray-500">
                       <img src={usersvg} width={35} height={35} />
                     </div>
                     <div className="ml-2">
-                      <h3 className="text-lg font-semibold">
+                      <h3 className="text-sm md:text-lg font-semibold">
                         {user?.fullname}
                       </h3>
-                      <p className="text-sm font-extralight text-gray-600">
+                      <p className="text-xs md:text-sm font-extralight text-gray-600">
+                        {user?.email}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="text-center text-lg  font-semibold mt-24">
+              No Users
+            </div>
+          )}
+        </div>
+      </div>
+      <div  className={`w-1/3  md:w-1/4 h-full bg-light ease-linear transition-all duration-500 fixed top-0 ${isLeftBarOpen?"left-0":"left-[-100%]"}  md:hidden `}>
+        <div>
+          <img onClick={()=>setIsLeftBarOpen(prev=>!prev)}className="absolute top-0 right-0"  src={cancelsvg} width={25} height={25} alt="cancel" />
+        </div>
+        <div className="text-primary text-sm md:text-lg  pl-2 pt-5">New people</div>
+        <div className=" overflow-y-auto  py-2 pl-2 ">
+          {users.length > 0 ? (
+            users.map(({ user }) => {
+              return (
+                <div key={user?.receiverId}>
+                  <div
+                    className="flex items-center cursor-pointer  py-4 md:py-8 border-b border-b-gray-500 "
+                    onClick={() => fetchMessages("new", user)}
+                  >
+                    <div className=" rounded-full border border-gray-500">
+                      <img src={usersvg} width={35} height={35} />
+                    </div>
+                    <div className="ml-2">
+                      <h3 className="text-sm md:text-lg font-semibold">
+                        {user?.fullname}
+                      </h3>
+                      <p className="text-xs md:text-sm font-extralight text-gray-600">
                         {user?.email}
                       </p>
                     </div>
