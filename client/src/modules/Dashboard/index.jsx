@@ -160,7 +160,7 @@ const bottomRef = useRef(null)
         <div className="ml-2 mt-5 md:mt-10 ">
           <div className="flex items-center justify-between">
           <div className="text-primary text-sm sm:text-lg  ">Messages</div>
-            <div><img onClick={()=>setIsLeftBarOpen(prev=>!prev)} width={20} height={20} src={plussvg} alt="plus" /></div> </div>
+            <div className="block md:hidden"><img onClick={()=>setIsLeftBarOpen(prev=>!prev)} width={20} height={20} src={plussvg} alt="plus" /></div> </div>
           
           <div className=" overflow-y-auto  py-3 md:py-7 ">
             {conversations.length > 0 ? (
