@@ -15,18 +15,18 @@ const Form = ({ isSignInPage = false }) => {
   async function handleSubmit(e) {
     e.preventDefault();
 
-    if (data?.email.trim() !== "aziz" && data?.email.trim() !== "admin") {
-    const isValidEmail = validateEmail(data.email)
+    // if (data?.email.trim() !== "aziz" && data?.email.trim() !== "admin") {
+    //
 
-      console.log(data.email);
-      if (!isValidEmail) {
-        toast.warning("Please enter a valid email")
-    return
-      }
-      return
+    //   // console.log(data.email);
+
+    //   return
+    // }
+    const isValidEmail = validateEmail(data.email);
+    if (!isValidEmail) {
+      toast.warning("Please enter a valid email");
+      return;
     }
-
- 
 
     const res = await fetch(
       `http://localhost:3000/api/${isSignInPage ? "login" : "register"}`,
@@ -38,12 +38,14 @@ const Form = ({ isSignInPage = false }) => {
         body: JSON.stringify(data),
       }
     );
-    //  console.log(res);
+    console.log(res);
     const resData = await res.json();
-    //  console.log(resData);
+    console.log(resData);
     if (resData.status === 400) {
       toast.warning(resData.message);
     } else if (resData.status === 201) {
+      navigate("/users/sign_in")
+      setData({})
       toast.success(resData.message);
     } else if (resData.token) {
       toast.success(resData.message);
@@ -79,8 +81,8 @@ const Form = ({ isSignInPage = false }) => {
             />
           )}
           <Input
-             autocomplete="current-password"
-            // type="email"
+            autocomplete="current-password"
+            type="email"
             label="Email address"
             name="email"
             placeholder="Enter your email"

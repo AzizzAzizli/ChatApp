@@ -10,10 +10,10 @@ import { io } from "socket.io-client";
 
 const Dashboard = () => {
   const [user, setUser] = useState(
-    JSON.parse(localStorage.getItem("user:detail"))
+    JSON.parse(localStorage?.getItem("user:detail"))
   );
   const [conversations, setConversations] = useState([]);
-  const [messages, setMessages] = useState({});
+  const [messages, setMessages] = useState({messages:[],receiver:{} , conversationId:""});
   const [message, setMessage] = useState("");
   const [users, setUsers] = useState([]);
   const [socket, setSocket] = useState(null);
@@ -46,7 +46,7 @@ const bottomRef = useRef(null)
         console.log(data);
         setMessages((prev) => ({
           ...prev,
-          messages: [...prev.messages, { user: data.user, message: data.message }],
+          messages: [...prev?.messages, { user: data?.user, message: data?.message }],
         }));
       });
     }
@@ -93,7 +93,7 @@ const bottomRef = useRef(null)
     // console.log(resData,"messageRes");
     setMessages({ messages: resData, receiver, conversationId });
   }
-  // console.log(messages,"messages");
+  console.log(messages,"messages");
 
   async function sendMessage() {
     socket.emit("sendMessage", {
@@ -147,7 +147,7 @@ const bottomRef = useRef(null)
       <div className="w-1/3  md:w-1/4  h-full  bg-secondary  ">
         <div className="flex items-center justify-center my-4 border-b   border-gray-300 pb-3">
           <div className="border-2 border-primary rounded-full">
-            <img className="w-[35px] md:w-[50px]"  src={usersvg} width={50} height={50} />
+            <img className="w-[35px] md:w-[50px]"  src={usersvg} alt="usersvg"  />
           </div>
           <div className="ml-4">
             <h3 className="text-lg sm:text-2xl">{user.fullname}</h3>
@@ -213,7 +213,7 @@ const bottomRef = useRef(null)
         </div>
         <div className="h-3/4 w-full  overflow-y-auto">
           <div className="h-full py-4 px-1 sm:px-3">
-            {messages?.messages?.length > 0 ? (
+            {messages?.conversationId !==""? (
               messages?.messages?.map(
                 ({ message, user: { id, fullname } = {} }, index) => {
                   if (id === user.id) {

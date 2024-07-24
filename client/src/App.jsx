@@ -18,7 +18,7 @@ function App() {
   };
   return (
     <>
-      <ToastContainer />
+      <ToastContainer autoClose={750} />
 
       <Routes>
         <Route
